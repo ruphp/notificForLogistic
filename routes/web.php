@@ -8,5 +8,7 @@ Route::get('/', fn () => response()->json([
     'endpoints' => [
         'health' => '/up',
         'api_index' => '/api',
+        'create_bulk_notification' => 'POST /api/notifications/bulk',
+        'subscriber_history' => 'GET /api/subscribers/{subscriberId}/notifications',
     ],
 ]));
