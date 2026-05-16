@@ -11,12 +11,13 @@ RUN apk add --no-cache \
     bash \
     icu-dev \
     linux-headers \
+    oniguruma-dev \
     libpq-dev \
     sqlite-dev \
     nginx \
     supervisor \
     $PHPIZE_DEPS \
-    && docker-php-ext-install intl pdo pdo_pgsql pdo_sqlite sockets \
+    && docker-php-ext-install intl mbstring pdo pdo_pgsql pdo_sqlite sockets \
     && apk del $PHPIZE_DEPS
 
 WORKDIR /var/www/html

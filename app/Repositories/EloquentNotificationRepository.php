@@ -2,6 +2,7 @@
 
 namespace App\Repositories;
 
+use App\Enums\NotificationStatus;
 use App\Models\Notification;
 use App\Models\NotificationBatch;
 use App\Repositories\Contracts\NotificationRepositoryInterface;
@@ -20,6 +21,36 @@ class EloquentNotificationRepository implements NotificationRepositoryInterface
     public function createNotification(array $data): Notification
     {
         return Notification::query()->create($data);
+    }
+
+    public function findNotificationWithBatch(string $notificationId): ?Notification
+    {
+        return Notification::query()
+            ->with('batch')
+            ->find($notificationId);
+    }
+
+    public function markNotificationSent(Notification $notification, string $providerMessageId): Notification
+    {
+        $notification->forceFill([
+            'status' => NotificationStatus::Sent,
+            'attempts' => $notification->attempts + 1,
+            'provider_message_id' => $providerMessageId,
+            'sent_at' => now(),
+            'last_error' => null,
+        ])->save();
+
+        return $notification;
+    }
+
+    public function markNotificationDelivered(Notification $notification): Notification
+    {
+        $notification->forceFill([
+            'status' => NotificationStatus::Delivered,
+            'delivered_at' => now(),
+        ])->save();
+
+        return $notification;
     }
 
     public function findBatchByIdempotencyKey(string $idempotencyKey): ?NotificationBatch

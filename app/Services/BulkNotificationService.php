@@ -6,14 +6,17 @@ use App\Enums\NotificationChannel;
 use App\Enums\NotificationPriority;
 use App\Enums\NotificationStatus;
 use App\Models\NotificationBatch;
+use App\Queue\Contracts\NotificationQueuePublisherInterface;
 use App\Repositories\Contracts\NotificationRepositoryInterface;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
 class BulkNotificationService
 {
-    public function __construct(private readonly NotificationRepositoryInterface $notifications)
-    {
+    public function __construct(
+        private readonly NotificationRepositoryInterface $notifications,
+        private readonly NotificationQueuePublisherInterface $queue,
+    ) {
     }
 
     /**
@@ -21,7 +24,6 @@ class BulkNotificationService
      *
      * @param array<int, string> $recipientIds
      */
-    // todo Пока здесь только запись в БД. Публикацию в RabbitMQ добавлю позже.
     public function create(
         string $idempotencyKey,
         string $channel,
@@ -29,8 +31,10 @@ class BulkNotificationService
         string $message,
         array $recipientIds,
     ): NotificationBatch {
+        $notificationIds = [];
+
         try {
-            return DB::transaction(function () use ($idempotencyKey, $channel, $priority, $message, $recipientIds): NotificationBatch {
+            $batch = DB::transaction(function () use ($idempotencyKey, $channel, $priority, $message, $recipientIds, &$notificationIds): NotificationBatch {
                 $batch = $this->notifications->firstOrCreateBatch($idempotencyKey, [
                     'channel' => NotificationChannel::from($channel),
                     'priority' => NotificationPriority::from($priority),
@@ -43,7 +47,7 @@ class BulkNotificationService
                 }
 
                 foreach ($recipientIds as $recipientId) {
-                    $this->notifications->createNotification([
+                    $notification = $this->notifications->createNotification([
                         'batch_id' => $batch->id,
                         'recipient_id' => $recipientId,
                         'channel' => NotificationChannel::from($channel),
@@ -51,11 +55,15 @@ class BulkNotificationService
                         'message_hash' => hash('sha256', $message),
                         'status' => NotificationStatus::Queued,
                     ]);
+
+                    $notificationIds[] = $notification->id;
                 }
 
                 return $batch;
             });
         } catch (Throwable $exception) {
+
+            //перепроверка  изза дубля ли ошибка
             $batch = $this->notifications->findBatchByIdempotencyKey($idempotencyKey);
 
             if (!$batch) {
@@ -64,5 +72,11 @@ class BulkNotificationService
 
             return $batch;
         }
+
+        foreach ($notificationIds as $notificationId) {
+            $this->queue->publishNotification($notificationId);
+        }
+
+        return $batch;
     }
 }

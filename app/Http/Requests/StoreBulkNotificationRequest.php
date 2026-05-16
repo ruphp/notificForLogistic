@@ -3,6 +3,8 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Validation\Rule;
 
 class StoreBulkNotificationRequest extends FormRequest
@@ -22,5 +24,13 @@ class StoreBulkNotificationRequest extends FormRequest
             'recipient_ids' => ['required', 'array', 'min:1', 'max:1000'],
             'recipient_ids.*' => ['required', 'string', 'max:128'],
         ];
+    }
+
+    protected function failedValidation(Validator $validator): void
+    {
+        throw new HttpResponseException(response()->json([
+            'message' => 'Ошибка валидации.',
+            'errors' => $validator->errors(),
+        ], 422));
     }
 }
