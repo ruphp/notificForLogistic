@@ -11,8 +11,8 @@ class NotificationDeliveryMessageHandler implements NotificationMessageHandlerIn
     {
     }
 
-    public function handle(string $notificationId): void
+    public function handle(string $notificationId): bool
     {
-        $this->delivery->send($notificationId);
+        return $this->delivery->send($notificationId);
     }
 }

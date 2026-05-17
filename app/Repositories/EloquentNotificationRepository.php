@@ -53,6 +53,28 @@ class EloquentNotificationRepository implements NotificationRepositoryInterface
         return $notification;
     }
 
+    public function markNotificationAttemptFailed(Notification $notification, string $error): Notification
+    {
+        $notification->forceFill([
+            'attempts' => $notification->attempts + 1,
+            'last_error' => $error,
+        ])->save();
+
+        return $notification;
+    }
+
+    public function markNotificationDropped(Notification $notification, string $error): Notification
+    {
+        $notification->forceFill([
+            'status' => NotificationStatus::Dropped,
+            'attempts' => $notification->attempts + 1,
+            'last_error' => $error,
+            'dropped_at' => now(),
+        ])->save();
+
+        return $notification;
+    }
+
     public function findBatchByIdempotencyKey(string $idempotencyKey): ?NotificationBatch
     {
         return NotificationBatch::query()

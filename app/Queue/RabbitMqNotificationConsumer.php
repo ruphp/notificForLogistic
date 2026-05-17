@@ -31,12 +31,12 @@ class RabbitMqNotificationConsumer
             function (AMQPMessage $message) use ($handler): void {
                 try {
                     $payload = json_decode($message->getBody(), true, 512, JSON_THROW_ON_ERROR);
-                    $handler->handle((string) $payload['notification_id']);
+                    $isFinished = $handler->handle((string) $payload['notification_id']);
 
-                    $message->ack();
+                    $isFinished ? $message->ack() : $message->nack(true, false);
                 } catch (Throwable) {
-                    // Ошибку пока возвращаем в очередь, retry-логику добавлю отдельным шагом.
-                    $message->nack(false, true);
+                    // Если упали до фиксации ошибки в БД, возвращаем сообщение в очередь.
+                    $message->nack(true, false);
                 }
             },
         );

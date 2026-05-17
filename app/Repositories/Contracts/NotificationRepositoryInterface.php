@@ -18,6 +18,10 @@ interface NotificationRepositoryInterface
 
     public function markNotificationDelivered(Notification $notification): Notification;
 
+    public function markNotificationAttemptFailed(Notification $notification, string $error): Notification;
+
+    public function markNotificationDropped(Notification $notification, string $error): Notification;
+
     public function findBatchByIdempotencyKey(string $idempotencyKey): ?NotificationBatch;
 
     public function getHistoryBySubscriber(string $subscriberId, int $limit): Collection;
