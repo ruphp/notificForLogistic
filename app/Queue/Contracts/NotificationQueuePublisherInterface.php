@@ -4,5 +4,5 @@ namespace App\Queue\Contracts;
 
 interface NotificationQueuePublisherInterface
 {
-    public function publishNotification(string $notificationId): void;
+    public function publishNotification(string $notificationId, string $priority): void;
 }

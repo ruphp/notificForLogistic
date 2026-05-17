@@ -19,11 +19,7 @@ class BulkNotificationService
     ) {
     }
 
-    /**
-     * Создает пачку рассылки и отдельные уведомления для каждого получателя.
-     *
-     * @param array<int, string> $recipientIds
-     */
+    // Создает пачку рассылки и отдельные уведомления для каждого получателя.
     public function create(
         string $idempotencyKey,
         string $channel,
@@ -74,7 +70,7 @@ class BulkNotificationService
         }
 
         foreach ($notificationIds as $notificationId) {
-            $this->queue->publishNotification($notificationId);
+            $this->queue->publishNotification($notificationId, $priority);
         }
 
         return $batch;

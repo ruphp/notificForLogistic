@@ -6,13 +6,13 @@ use App\Queue\Contracts\NotificationQueuePublisherInterface;
 
 class FakeNotificationQueuePublisher implements NotificationQueuePublisherInterface
 {
-    /**
-     * @var array<int, string>
-     */
     public array $published = [];
 
-    public function publishNotification(string $notificationId): void
+    public function publishNotification(string $notificationId, string $priority): void
     {
-        $this->published[] = $notificationId;
+        $this->published[] = [
+            'id' => $notificationId,
+            'priority' => $priority,
+        ];
     }
 }

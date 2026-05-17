@@ -3,6 +3,7 @@
 namespace App\Queue;
 
 use App\Queue\Contracts\NotificationQueuePublisherInterface;
+use PhpAmqpLib\Wire\AMQPTable;
 use PhpAmqpLib\Message\AMQPMessage;
 
 class RabbitMqNotificationPublisher implements NotificationQueuePublisherInterface
@@ -11,13 +12,21 @@ class RabbitMqNotificationPublisher implements NotificationQueuePublisherInterfa
     {
     }
 
-    public function publishNotification(string $notificationId): void
+    public function publishNotification(string $notificationId, string $priority): void
     {
         $connection = $this->connections->make();
         $channel = $connection->channel();
         $queueName = config('rabbitmq.queue');
 
-        $channel->queue_declare($queueName, false, true, false, false);
+        $channel->queue_declare(
+            $queueName,
+            false,
+            true,
+            false,
+            false,
+            false,
+            new AMQPTable(['x-max-priority' => config('rabbitmq.max_priority')]),
+        );
 
         $message = new AMQPMessage(
             json_encode([
@@ -27,6 +36,7 @@ class RabbitMqNotificationPublisher implements NotificationQueuePublisherInterfa
             [
                 'content_type' => 'application/json',
                 'delivery_mode' => AMQPMessage::DELIVERY_MODE_PERSISTENT,
+                'priority' => config("rabbitmq.priorities.$priority", 5),
             ],
         );
 
