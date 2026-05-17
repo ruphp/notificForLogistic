@@ -18,8 +18,8 @@
             "value": "application/json"
           },
           {
-            "key": "X-Client-Id",
-            "value": "company-123"
+            "key": "X-Api-Key",
+            "value": "local-demo-key"
           }
         ],
         "body": {
@@ -54,8 +54,8 @@
             "value": "application/json"
           },
           {
-            "key": "X-Client-Id",
-            "value": "company-123"
+            "key": "X-Api-Key",
+            "value": "local-demo-key"
           }
         ],
         "url": {

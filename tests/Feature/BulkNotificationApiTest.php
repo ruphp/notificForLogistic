@@ -106,7 +106,7 @@ class BulkNotificationApiTest extends TestCase
 
         $publisher = new FakeNotificationQueuePublisher();
         $apiKey = 'limit-key-'.random_int(1, 100000);
-        config(["notifications.api_keys.$apiKey" => 'company-limit']);
+        config(["notifications.api_keys.$apiKey" => 'company-limit-'.random_int(1, 100000)]);
 
         $this->app->instance(NotificationQueuePublisherInterface::class, $publisher);
 

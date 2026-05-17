@@ -27,6 +27,8 @@
 docker compose up --build
 ```
 
+Этой командой запускаются приложение, PostgreSQL, RabbitMQ, Redis и worker очереди.
+
 2. Проверить, что сервис отвечает:
 
 - `http://localhost:8080/` - краткая информация о сервисе;
@@ -34,13 +36,7 @@ docker compose up --build
 - `http://localhost:8080/up` - health-check Laravel;
 - `http://localhost:15673` - RabbitMQ UI (`guest` / `guest`).
 
-3. Запустить воркер очереди в отдельной консоли:
-
-```
-docker compose exec app php artisan notifications:consume
-```
-
-4. Прогнать тесты:
+3. Прогнать тесты:
 
 ```
 docker compose exec app php artisan test
@@ -53,6 +49,8 @@ docker compose exec app php artisan test
 ```
 X-Api-Key: local-demo-key
 ```
+
+Postman-коллекция для проверки API лежит тут: `docs/postman_collection.json`.
 
 `idempotency_key` задает клиент API. Для новой операции лучше передавать новый UUID или другой уникальный ключ.
 При повторной отправке того же запроса после ошибки/timeout нужно использовать тот же `idempotency_key`, тогда вторая пачка не создастся.

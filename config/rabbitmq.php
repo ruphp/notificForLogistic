@@ -6,7 +6,7 @@ return [
     'user' => env('RABBITMQ_USER', 'guest'),
     'password' => env('RABBITMQ_PASSWORD', 'guest'),
     'vhost' => env('RABBITMQ_VHOST', '/'),
-    'queue' => env('RABBITMQ_QUEUE', 'notifications.outgoing'),
+    'queue' => env('RABBITMQ_QUEUE', 'notifications.outgoing.priority'),
     'max_priority' => (int) env('RABBITMQ_MAX_PRIORITY', 10),
     'priorities' => [
         'high' => 10,
