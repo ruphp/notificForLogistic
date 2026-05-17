@@ -36,12 +36,41 @@ class BulkNotificationApiTest extends TestCase
             ->assertJsonPath('recipient_count', 2);
 
         $this->assertDatabaseHas('notification_batches', [
-            'idempotency_key' => 'api-test-1',
+            'idempotency_key' => 'company-demo:api-test-1',
             'recipient_count' => 2,
         ]);
 
         $this->assertDatabaseCount('notifications', 2);
         $this->assertCount(2, $publisher->published);
+    }
+
+    // Одинаковый idempotency_key у разных клиентов не должен конфликтовать.
+    public function test_same_idempotency_key_allowed_for_different_clients(): void
+    {
+        $publisher = new FakeNotificationQueuePublisher();
+        config(['notifications.api_keys.second-local-key' => 'company-second']);
+
+        $this->app->instance(NotificationQueuePublisherInterface::class, $publisher);
+
+        $payload = [
+            'idempotency_key' => 'same-key',
+            'channel' => 'sms',
+            'priority' => 'default',
+            'message' => 'Same key',
+            'recipient_ids' => ['driver-1'],
+        ];
+
+        $this->postJson('/api/notifications/bulk', $payload, [
+            'X-Api-Key' => 'local-demo-key',
+        ])->assertAccepted();
+
+        $this->postJson('/api/notifications/bulk', $payload, [
+            'X-Api-Key' => 'second-local-key',
+        ])->assertAccepted();
+
+        $this->assertDatabaseCount('notification_batches', 2);
+        $this->assertDatabaseHas('notification_batches', ['idempotency_key' => 'company-demo:same-key']);
+        $this->assertDatabaseHas('notification_batches', ['idempotency_key' => 'company-second:same-key']);
     }
 
     // Повторный запрос с тем же ключом не должен создавать дубли.

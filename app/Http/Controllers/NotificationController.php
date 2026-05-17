@@ -26,8 +26,10 @@ class NotificationController
             ], 429);
         }
 
+        $serviceIdempotencyKey = $clientId.':'.$data['idempotency_key'];
+
         $batch = $service->create(
-            idempotencyKey: $data['idempotency_key'],
+            idempotencyKey: $serviceIdempotencyKey,
             channel: $data['channel'],
             priority: $data['priority'],
             message: $data['message'],
@@ -36,7 +38,7 @@ class NotificationController
 
         return response()->json([
             'batch_id' => $batch->id,
-            'idempotency_key' => $batch->idempotency_key,
+            'idempotency_key' => $data['idempotency_key'],
             'status' => 'accepted',
             'recipient_count' => $batch->recipient_count,
         ], $batch->wasRecentlyCreated ? 202 : 200);
