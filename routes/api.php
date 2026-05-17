@@ -12,8 +12,10 @@ Route::get('/', fn () => response()->json([
     ],
 ]));
 
-Route::post('/notifications/bulk', [NotificationController::class, 'store'])
-    ->name('notifications.bulk');
+Route::middleware('client')->group(function (): void {
+    Route::post('/notifications/bulk', [NotificationController::class, 'store'])
+        ->name('notifications.bulk');
 
-Route::get('/subscribers/{subscriberId}/notifications', [NotificationController::class, 'bySubscriber'])
-    ->name('subscribers.notifications');
+    Route::get('/subscribers/{subscriberId}/notifications', [NotificationController::class, 'bySubscriber'])
+        ->name('subscribers.notifications');
+});

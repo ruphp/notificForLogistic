@@ -1,0 +1,82 @@
+{
+  "info": {
+    "name": "Notification Service",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Создать пачку уведомлений",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Client-Id",
+            "value": "company-123"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"idempotency_key\": \"route-change-1\",\n  \"channel\": \"sms\",\n  \"priority\": \"high\",\n  \"message\": \"Изменился маршрут\",\n  \"recipient_ids\": [\"driver-1\", \"driver-2\"]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/notifications/bulk",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "notifications",
+            "bulk"
+          ]
+        }
+      }
+    },
+    {
+      "name": "История уведомлений получателя",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Client-Id",
+            "value": "company-123"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/subscribers/driver-1/notifications",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "subscribers",
+            "driver-1",
+            "notifications"
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080"
+    }
+  ]
+}

@@ -26,6 +26,8 @@ class BulkNotificationApiTest extends TestCase
             'priority' => 'high',
             'message' => 'Test message',
             'recipient_ids' => ['driver-1', 'driver-2'],
+        ], [
+            'X-Api-Key' => 'local-demo-key',
         ]);
 
         $response
@@ -57,12 +59,64 @@ class BulkNotificationApiTest extends TestCase
             'recipient_ids' => ['driver-1', 'driver-2'],
         ];
 
-        $this->postJson('/api/notifications/bulk', $payload)->assertAccepted();
-        $this->postJson('/api/notifications/bulk', $payload)->assertOk();
+        $headers = ['X-Api-Key' => 'local-demo-key'];
+
+        $this->postJson('/api/notifications/bulk', $payload, $headers)->assertAccepted();
+        $this->postJson('/api/notifications/bulk', $payload, $headers)->assertOk();
 
         $this->assertDatabaseCount('notification_batches', 1);
         $this->assertDatabaseCount('notifications', 2);
         $this->assertCount(2, $publisher->published);
+    }
+
+    // Redis ограничивает слишком частые запросы на создание пачек.
+    public function test_bulk_request_rate_limit_returns_429(): void
+    {
+        config(['notifications.bulk_rate_limit.max_requests' => 1]);
+        config(['notifications.bulk_rate_limit.seconds' => 60]);
+
+        $publisher = new FakeNotificationQueuePublisher();
+        $apiKey = 'limit-key-'.random_int(1, 100000);
+        config(["notifications.api_keys.$apiKey" => 'company-limit']);
+
+        $this->app->instance(NotificationQueuePublisherInterface::class, $publisher);
+
+        $this
+            ->withHeader('X-Api-Key', $apiKey)
+            ->postJson('/api/notifications/bulk', [
+                'idempotency_key' => 'api-test-limit-1',
+                'channel' => 'sms',
+                'priority' => 'default',
+                'message' => 'Limit message',
+                'recipient_ids' => ['driver-1'],
+            ])
+            ->assertAccepted();
+
+        $this
+            ->withHeader('X-Api-Key', $apiKey)
+            ->postJson('/api/notifications/bulk', [
+                'idempotency_key' => 'api-test-limit-2',
+                'channel' => 'sms',
+                'priority' => 'default',
+                'message' => 'Limit message',
+                'recipient_ids' => ['driver-2'],
+            ])
+            ->assertStatus(429);
+    }
+
+    // Рабочие методы API требуют ключ клиента.
+    public function test_api_key_is_required(): void
+    {
+        $this
+            ->postJson('/api/notifications/bulk', [
+                'idempotency_key' => 'api-test-no-client',
+                'channel' => 'sms',
+                'priority' => 'default',
+                'message' => 'No client',
+                'recipient_ids' => ['driver-1'],
+            ])
+            ->assertUnauthorized()
+            ->assertJsonPath('message', 'Invalid API key.');
     }
 
     // История получателя должна возвращать созданные уведомления.
@@ -78,9 +132,13 @@ class BulkNotificationApiTest extends TestCase
             'priority' => 'low',
             'message' => 'History message',
             'recipient_ids' => ['subscriber-1'],
+        ], [
+            'X-Api-Key' => 'local-demo-key',
         ])->assertAccepted();
 
-        $response = $this->getJson('/api/subscribers/subscriber-1/notifications');
+        $response = $this->getJson('/api/subscribers/subscriber-1/notifications', [
+            'X-Api-Key' => 'local-demo-key',
+        ]);
 
         $response
             ->assertOk()

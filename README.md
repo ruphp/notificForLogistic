@@ -21,7 +21,7 @@
 
 ## Запуск
 
-```bash
+```
 docker compose up --build
 ```
 
@@ -34,7 +34,7 @@ docker compose up --build
 
 Воркер очереди запускается отдельно:
 
-```bash
+```
 docker compose exec app php artisan notifications:consume
 ```
 
@@ -44,10 +44,11 @@ docker compose exec app php artisan notifications:consume
 
 Создать пачку уведомлений:
 
-```bash
+```
 curl -X POST http://localhost:8080/api/notifications/bulk \
   -H "Accept: application/json" \
   -H "Content-Type: application/json" \
+  -H "X-Api-Key: local-demo-key" \
   -d '{
     "idempotency_key": "route-change-1",
     "channel": "sms",
@@ -59,6 +60,20 @@ curl -X POST http://localhost:8080/api/notifications/bulk \
 
 `idempotency_key` задает клиент API. Для одного и того же события нужно отправлять один и тот же ключ.
 
+Для локального запуска есть демо-ключ:
+
+```
+X-Api-Key: local-demo-key
+```
+
+Новый ключ в этом варианте добавляется через `.env`:
+
+```
+NOTIFICATION_DEMO_API_KEY=another-local-key
+```
+
+В реальном сервисе такие ключи лучше хранить в БД или отдельном secrets-хранилище, но для тестового задания этого достаточно.
+
 Пример:
 
 - первый запрос: `idempotency_key = route-change-1`;
@@ -69,8 +84,9 @@ curl -X POST http://localhost:8080/api/notifications/bulk \
 
 Посмотреть историю получателя:
 
-```bash
-curl http://localhost:8080/api/subscribers/driver-1/notifications
+```
+curl http://localhost:8080/api/subscribers/driver-1/notifications \
+  -H "X-Api-Key: local-demo-key"
 ```
 
 После обработки воркером статус должен поменяться с `queued` на `delivered`.
@@ -79,7 +95,7 @@ curl http://localhost:8080/api/subscribers/driver-1/notifications
 
 ## Тесты
 
-```bash
+```
 docker compose exec app php artisan test
 ```
 
@@ -90,7 +106,8 @@ docker compose exec app php artisan test
 - Laravel 12, PHP 8.4;
 - PostgreSQL для хранения пачек и уведомлений;
 - RabbitMQ для очереди отправки;
-- Redis поднят в compose как часть инфраструктуры, в текущей реализации почти не используется;
+- Redis используется для временной защиты от параллельных дублей по `idempotency_key` и простого rate limit на создание пачек;
+- рабочие API-методы требуют заголовок `X-Api-Key`, демо-ключ для локалки: `local-demo-key`;
 - nginx + php-fpm работают в одном app-контейнере через supervisord;
 - тесты используют SQLite in-memory, чтобы не трогать локальную PostgreSQL.
 

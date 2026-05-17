@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreBulkNotificationRequest;
 use App\Services\BulkNotificationService;
 use App\Services\NotificationHistoryService;
+use App\Services\RedisBulkRequestLimiter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -12,10 +13,18 @@ class NotificationController
 {
     public function store(
         StoreBulkNotificationRequest $request,
-        BulkNotificationService $service
+        BulkNotificationService $service,
+        RedisBulkRequestLimiter $limiter,
     ): JsonResponse
     {
         $data = $request->validated();
+        $clientId = (string) $request->attributes->get('client_id');
+
+        if (!$limiter->allow('bulk:'.$clientId)) {
+            return response()->json([
+                'message' => 'Вы превысили лимит обращений.',
+            ], 429);
+        }
 
         $batch = $service->create(
             idempotencyKey: $data['idempotency_key'],
