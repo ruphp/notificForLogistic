@@ -16,6 +16,7 @@ class BulkNotificationService
     public function __construct(
         private readonly NotificationRepositoryInterface $notifications,
         private readonly NotificationQueuePublisherInterface $queue,
+        private readonly RedisIdempotencyLock $idempotencyLock,
     ) {
     }
 
@@ -28,6 +29,15 @@ class BulkNotificationService
         array $recipientIds,
     ): NotificationBatch {
         $notificationIds = [];
+        $hasLock = $this->idempotencyLock->tryLock($idempotencyKey);// и ставим лок на 30 сек
+
+        if (!$hasLock) { //скорее всего уже обработан, ищем
+            $batch = $this->notifications->findBatchByIdempotencyKey($idempotencyKey);
+
+            if ($batch) {
+                return $batch;
+            }
+        }
 
         try {
             $batch = DB::transaction(function () use ($idempotencyKey, $channel, $priority, $message, $recipientIds, &$notificationIds): NotificationBatch {
@@ -67,6 +77,10 @@ class BulkNotificationService
             }
 
             return $batch;
+        } finally {
+            if ($hasLock) {
+                $this->idempotencyLock->release($idempotencyKey);
+            }
         }
 
         foreach ($notificationIds as $notificationId) {

@@ -6,7 +6,8 @@
   "require": {
     "php": "^8.4",
     "laravel/framework": "^12.0",
-    "php-amqplib/php-amqplib": "^3.7"
+    "php-amqplib/php-amqplib": "^3.7",
+    "predis/predis": "^2.3"
   },
   "require-dev": {
     "fakerphp/faker": "^1.24",
