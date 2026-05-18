@@ -5,6 +5,29 @@
   },
   "item": [
     {
+      "name": "Проверка сервиса",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8080/api",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api"
+          ]
+        }
+      }
+    },
+    {
       "name": "Создать пачку уведомлений",
       "request": {
         "method": "POST",
@@ -24,7 +47,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"idempotency_key\": \"route-change-1\",\n  \"channel\": \"sms\",\n  \"priority\": \"high\",\n  \"message\": \"Изменился маршрут\",\n  \"recipient_ids\": [\"driver-1\", \"driver-2\"]\n}",
+          "raw": "{\n  \"idempotency_key\": \"postman-route-change-1\",\n  \"channel\": \"sms\",\n  \"priority\": \"high\",\n  \"message\": \"Изменился маршрут\",\n  \"recipient_ids\": [\"driver-1\", \"driver-2\"]\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -32,10 +55,12 @@
           }
         },
         "url": {
-          "raw": "{{base_url}}/api/notifications/bulk",
+          "raw": "http://localhost:8080/api/notifications/bulk",
+          "protocol": "http",
           "host": [
-            "{{base_url}}"
+            "localhost"
           ],
+          "port": "8080",
           "path": [
             "api",
             "notifications",
@@ -59,10 +84,12 @@
           }
         ],
         "url": {
-          "raw": "{{base_url}}/api/subscribers/driver-1/notifications",
+          "raw": "http://localhost:8080/api/subscribers/driver-1/notifications",
+          "protocol": "http",
           "host": [
-            "{{base_url}}"
+            "localhost"
           ],
+          "port": "8080",
           "path": [
             "api",
             "subscribers",
@@ -71,12 +98,6 @@
           ]
         }
       }
-    }
-  ],
-  "variable": [
-    {
-      "key": "base_url",
-      "value": "http://localhost:8080"
     }
   ]
 }
